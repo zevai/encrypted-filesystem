@@ -12,7 +12,7 @@ class Encrypter
      * Define the number of blocks that should be read from the source file for each chunk.
      * We chose 255 because on decryption we want to read chunks of 4kb ((255 + 1)*16).
      */
-    protected const FILE_ENCRYPTION_BLOCKS = 255;
+    const FILE_ENCRYPTION_BLOCKS = 255;
     /**
      * The encryption key.
      *
