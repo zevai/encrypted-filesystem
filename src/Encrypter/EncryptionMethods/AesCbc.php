@@ -1,12 +1,11 @@
 <?php
 
-
-namespace SmaatCoda\EncryptedFilesystem\Encrypter;
+namespace SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods;
 
 use LogicException;
 use InvalidArgumentException;
 
-class AesCbc implements CipherInterface
+class AesCbc implements EncryptionMethodInterface
 {
     const ENCRYPTION_BLOCK_SIZE = 16;
 
@@ -14,21 +13,20 @@ class AesCbc implements CipherInterface
 
     protected $iv;
 
-    protected $keySize;
+    protected $keyLength;
 
-    public function __construct($iv, $keySize = 256)
+    public function __construct($iv, $keyLength = 256)
     {
         $this->iv = $this->currentIv = $iv;
-        $this->keySize = $keySize;
+        $this->keyLength = $keyLength;
         if (strlen($iv) !== openssl_cipher_iv_length($this->getOpenSslMethod())) {
             throw new InvalidArgumentException('Invalid initialization vector');
         }
     }
 
-
     public function getOpenSslMethod()
     {
-        return "aes-{$this->keySize}-cbc";
+        return "aes-{$this->keyLength}-cbc";
     }
 
     public function requiresPadding()
@@ -52,7 +50,6 @@ class AesCbc implements CipherInterface
 
     public function update($cipherTextBlock)
     {
-        $this->currentIv = substr($cipherTextBlock, self::BLOCK_SIZE * -1);
+        $this->currentIv = substr($cipherTextBlock, self::ENCRYPTION_BLOCK_SIZE * -1);
     }
-
 }

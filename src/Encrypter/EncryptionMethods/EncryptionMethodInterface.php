@@ -1,10 +1,8 @@
 <?php
 
+namespace SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods;
 
-namespace SmaatCoda\EncryptedFilesystem\Encrypter;
-
-
-interface CipherInterface
+interface EncryptionMethodInterface
 {
     public function getOpenSslMethod();
 
