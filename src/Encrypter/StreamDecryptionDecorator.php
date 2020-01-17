@@ -1,6 +1,5 @@
 <?php
 
-
 namespace SmaatCoda\EncryptedFilesystem\Encrypter;
 
 use GuzzleHttp\Psr7;
@@ -9,7 +8,7 @@ use LogicException;
 use Psr\Http\Message\StreamInterface;
 use SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods\EncryptionMethodInterface;
 
-class EncryptingStream implements StreamInterface
+class StreamDecryptionDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
@@ -23,9 +22,9 @@ class EncryptingStream implements StreamInterface
 
     protected $buffer;
 
-    public function __construct($path, EncryptionMethodInterface $encryptionMethod, $key)
+    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptionMethod, $key)
     {
-        $this->stream = Psr7\stream_for($path);
+        $this->stream = $stream;
         $this->encryptionMethod = $encryptionMethod;
         $this->key = $key;
     }
@@ -74,7 +73,7 @@ class EncryptingStream implements StreamInterface
         return false;
     }
 
-    private function decryptBlock(int $length)
+    private function decryptBlock($length)
     {
         if ($this->stream->eof()) {
             return '';
@@ -94,13 +93,13 @@ class EncryptingStream implements StreamInterface
 
         $plainText = openssl_decrypt(
             $encryptedText,
-            $this->cipherMethod->getOpenSslName(),
+            $this->encryptionMethod->getOpenSslMethod(),
             $this->key,
             $options,
-            $this->cipherMethod->getCurrentIv()
+            $this->encryptionMethod->getCurrentIv()
         );
 
-        $this->cipherMethod->update($encryptedText);
+        $this->encryptionMethod->update($encryptedText);
 
         return $plainText;
     }

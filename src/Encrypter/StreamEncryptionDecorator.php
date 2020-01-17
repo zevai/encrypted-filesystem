@@ -9,7 +9,7 @@ use LogicException;
 use Psr\Http\Message\StreamInterface;
 use SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods\EncryptionMethodInterface;
 
-class EncryptingStream implements StreamInterface
+class StreamEncryptionDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
@@ -23,9 +23,9 @@ class EncryptingStream implements StreamInterface
 
     protected $buffer;
 
-    public function __construct($path, EncryptionMethodInterface $encryptionMethod, $key)
+    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptionMethod, $key)
     {
-        $this->stream = Psr7\stream_for($path);
+        $this->stream = $stream;
         $this->encryptionMethod = $encryptionMethod;
         $this->key = $key;
     }
