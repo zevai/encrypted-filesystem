@@ -22,6 +22,11 @@ class EncryptionDecryptionStreamTest extends TestCase
         $this->testFileName = 'test-file';
     }
 
+    public static function tearDownAfterClass()
+    {
+
+    }
+
     public function test_encryption_decorator()
     {
         $encryptionMethod = new AesCbc(openssl_random_pseudo_bytes(16));
@@ -50,6 +55,8 @@ class EncryptionDecryptionStreamTest extends TestCase
      */
     public function test_decryption_decorator($inputFilePath)
     {
+
+        $controlFilePath = $this->storagePath . '/' . $this->testFileName;
         $outputFilePath = $this->storagePath . '/decryption-test-file-' . time();
 
         $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
@@ -65,6 +72,12 @@ class EncryptionDecryptionStreamTest extends TestCase
 
         $this->assertTrue($inputDecryptedStream->eof());
 
-        return $outputFilePath;
+        $controlContents = file_get_contents($controlFilePath);
+        $outputContents = file_get_contents($outputFilePath);
+
+//        unlink($inputFilePath);
+//        unlink($outputFilePath);
+
+//        $this->assertEquals($controlContents, $outputContents);
     }
 }

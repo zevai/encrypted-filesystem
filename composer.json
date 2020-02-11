@@ -24,7 +24,7 @@
     }
   },
   "scripts": {
-    "test": "phpunit"
+    "test": "./vendor/phpunit/phpunit/phpunit"
   },
   "license": "MIT",
   "authors": [

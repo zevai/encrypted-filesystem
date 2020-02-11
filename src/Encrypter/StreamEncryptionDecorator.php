@@ -82,7 +82,12 @@ class StreamEncryptionDecorator implements StreamInterface
             return '';
         }
 
+        $prefix = '';
         $plainText = '';
+
+        if ($this->stream->tell() == 0) {
+            $prefix = $this->encryptionMethod->getCurrentIv();
+        }
 
         do {
             $plainText .= $this->stream->read($length - strlen($plainText));
@@ -103,6 +108,7 @@ class StreamEncryptionDecorator implements StreamInterface
         );
 
         $this->encryptionMethod->update($encryptedText);
+        $encryptedText = $prefix . $encryptedText;
 
         return $encryptedText;
     }
