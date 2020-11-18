@@ -39,7 +39,7 @@ class StreamEncryptionDecorator implements StreamInterface
         if ($whence === SEEK_SET) {
             $this->buffer = '';
             $wholeBlockOffset
-                = (int) ($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
+                = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
             $this->stream->seek($wholeBlockOffset);
             $this->encryptionMethod->seek($wholeBlockOffset);
             $this->read($offset - $wholeBlockOffset);
@@ -50,6 +50,7 @@ class StreamEncryptionDecorator implements StreamInterface
 
     public function read($length)
     {
+        // TODO: when a file is only one block in size, the encryptor reaches eof while the only returning the iv, the actual data being in the buffer
         if ($length > strlen($this->buffer)) {
             $this->buffer .= $this->encryptBlock(
                 self::BLOCK_LENGTH * ceil(($length - strlen($this->buffer)) / self::BLOCK_LENGTH)
@@ -95,9 +96,11 @@ class StreamEncryptionDecorator implements StreamInterface
 
         $options = OPENSSL_RAW_DATA;
 
-        if (!$this->stream->eof() || $this->stream->getSize() !== $this->stream->tell()) {
+
+        if (!$this->stream->eof() && $this->stream->getSize() !== $this->stream->tell()) {
             $options |= OPENSSL_ZERO_PADDING;
         }
+
 
         $encryptedText = openssl_encrypt(
             $plainText,

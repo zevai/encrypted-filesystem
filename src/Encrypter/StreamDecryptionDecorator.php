@@ -38,7 +38,7 @@ class StreamDecryptionDecorator implements StreamInterface
         if ($whence === SEEK_SET) {
             $this->buffer = '';
             $wholeBlockOffset
-                = (int) ($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
+                = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
             $this->stream->seek($wholeBlockOffset);
             $this->encryptionMethod->seek($wholeBlockOffset);
             $this->read($offset - $wholeBlockOffset);
@@ -55,6 +55,7 @@ class StreamDecryptionDecorator implements StreamInterface
             );
         }
         $data = substr($this->buffer, 0, $length);
+
         $this->buffer = substr($this->buffer, $length);
         return $data ? $data : '';
     }
@@ -87,7 +88,7 @@ class StreamDecryptionDecorator implements StreamInterface
 
         $options = OPENSSL_RAW_DATA;
 
-        if (!$this->stream->eof() || $this->stream->getSize() !== $this->stream->tell()) {
+        if (!$this->stream->eof() && $this->stream->getSize() !== $this->stream->tell()) {
             $options |= OPENSSL_ZERO_PADDING;
         }
 
