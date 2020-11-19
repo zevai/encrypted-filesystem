@@ -61,15 +61,26 @@ class StreamEncryptionDecorator implements StreamInterface
         return $data ?: '';
     }
 
+    public function eof()
+    {
+        return $this->stream->eof() && empty($this->buffer);
+    }
+
     public function getSize()
     {
         $originalSize = $this->stream->getSize();
+        $requiresPadding = $this->encryptionMethod->requiresPadding();
 
-        if ($originalSize !== null && $this->encryptionMethod->requiresPadding()) {
-            return $originalSize + self::BLOCK_LENGTH - $originalSize % self::BLOCK_LENGTH;
+        $finalSize = $originalSize;
+
+        if ($originalSize !== null && $requiresPadding) {
+            $finalSize += self::BLOCK_LENGTH - $originalSize % self::BLOCK_LENGTH;
         }
 
-        return $originalSize;
+        // Add the IV bytes
+        $finalSize += self::BLOCK_LENGTH;
+
+        return $finalSize;
     }
 
     public function isWritable()
@@ -94,13 +105,12 @@ class StreamEncryptionDecorator implements StreamInterface
             $plainText .= $this->stream->read($length - strlen($plainText));
         } while (strlen($plainText) < $length && !$this->stream->eof());
 
-        $options = OPENSSL_RAW_DATA;
+        // Don't know why bitwise operator is required
+        $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
 
-
-        if (!$this->stream->eof() && $this->stream->getSize() !== $this->stream->tell()) {
-            $options |= OPENSSL_ZERO_PADDING;
+        if ($this->stream->eof()) {
+            $options = OPENSSL_RAW_DATA;
         }
-
 
         $encryptedText = openssl_encrypt(
             $plainText,

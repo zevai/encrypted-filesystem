@@ -32,18 +32,22 @@ class EncryptionDecryptionStreamTest extends TestCase
         $encryptionMethod = new AesCbc(openssl_random_pseudo_bytes(16));
 
         $inputFilePath = $this->storagePath . '/' . $this->testFileName;
-        $outputFilePath = $this->storagePath . '/encryption-test-file.txt-' . time() . '.txt';
+        $outputFilePath = $this->storagePath . '/' . time() .'-encrypted-' . $this->testFileName;
 
         $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
 
         $inputEncryptedStream = new StreamEncryptionDecorator($inputOriginalStream, $encryptionMethod, $this->key);
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
 
-
+        $encryptedTextLength = 0;
+        $declaredLength = $inputEncryptedStream->getSize();
         while (!$inputEncryptedStream->eof()) {
             $encryptedText = $inputEncryptedStream->read(StreamEncryptionDecorator::BLOCK_LENGTH);
             $outputStream->write($encryptedText);
+            $encryptedTextLength += strlen($encryptedText);
         }
+
+        print_r("\n result file length: $encryptedTextLength; declared length: $declaredLength");
 
         $this->assertTrue($inputEncryptedStream->eof());
 
@@ -57,7 +61,7 @@ class EncryptionDecryptionStreamTest extends TestCase
     {
 
         $controlFilePath = $this->storagePath . '/' . $this->testFileName;
-        $outputFilePath = $this->storagePath . '/decryption-test-file.txt-' . time() . '.txt';
+        $outputFilePath = $this->storagePath . '/' . time() .'-decrypted-' . $this->testFileName;
 
         $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
         $iv = $inputOriginalStream->read(StreamDecryptionDecorator::BLOCK_LENGTH);
@@ -69,9 +73,6 @@ class EncryptionDecryptionStreamTest extends TestCase
         while (!$inputDecryptedStream->eof()) {
             $encryptedText = $inputDecryptedStream->read(StreamDecryptionDecorator::BLOCK_LENGTH);
 
-            $encryptedTextLength = strlen($encryptedText);
-
-            print_r("\n received encrypted text: $encryptedText; received encrypted text length: $encryptedTextLength;");
             $outputStream->write($encryptedText);
         }
 
@@ -80,8 +81,13 @@ class EncryptionDecryptionStreamTest extends TestCase
         $controlContents = file_get_contents($controlFilePath);
         $outputContents = file_get_contents($outputFilePath);
 
+        $controlContentsLength = filesize($controlFilePath);
+        $outputContentsLength = filesize($outputFilePath);
+
         unlink($inputFilePath);
         unlink($outputFilePath);
+
+//        print_r("\n files are identical: " . ($controlContents == $outputContents ? 'true' : 'false') . "; control length: $controlContentsLength; result length: $outputContentsLength");
 
         $this->assertEquals($controlContents, $outputContents);
     }

@@ -86,10 +86,11 @@ class StreamDecryptionDecorator implements StreamInterface
             $encryptedText .= $this->stream->read($length - strlen($encryptedText));
         } while (strlen($encryptedText) < $length && !$this->stream->eof());
 
-        $options = OPENSSL_RAW_DATA;
+        $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
 
-        if (!$this->stream->eof() && $this->stream->getSize() !== $this->stream->tell()) {
-            $options |= OPENSSL_ZERO_PADDING;
+        // FIXME: it happens that eof is not reached but the pointer is at the last byte
+        if ($this->stream->eof() || $this->stream->getSize() === $this->stream->tell()) {
+            $options = OPENSSL_RAW_DATA;
         }
 
         $plainText = openssl_decrypt(
