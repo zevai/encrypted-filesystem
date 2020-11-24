@@ -1,6 +1,6 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem\Encrypter;
+namespace SmaatCoda\EncryptedFilesystem\Interfaces;
 
 use Exception;
 use RuntimeException;

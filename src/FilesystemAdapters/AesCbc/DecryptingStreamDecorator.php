@@ -1,14 +1,14 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem\Encrypter;
+namespace SmaatCoda\EncryptedFilesystem\Interfaces;
 
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;
 use Psr\Http\Message\StreamInterface;
-use SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods\EncryptionMethodInterface;
+use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods\EncryptionMethodInterface;
 
-class StreamDecryptionDecorator implements StreamInterface
+class DecryptingStreamDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
@@ -20,7 +20,9 @@ class StreamDecryptionDecorator implements StreamInterface
 
     protected $encryptionMethod;
 
-    protected $buffer;
+    protected $decryptionBuffer = '';
+
+    protected $encryptionBuffer = '';
 
     public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptionMethod, $key)
     {
@@ -36,9 +38,8 @@ class StreamDecryptionDecorator implements StreamInterface
             $whence = SEEK_SET;
         }
         if ($whence === SEEK_SET) {
-            $this->buffer = '';
-            $wholeBlockOffset
-                = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
+            $this->decryptionBuffer = '';
+            $wholeBlockOffset = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
             $this->stream->seek($wholeBlockOffset);
             $this->encryptionMethod->seek($wholeBlockOffset);
             $this->read($offset - $wholeBlockOffset);
@@ -49,14 +50,14 @@ class StreamDecryptionDecorator implements StreamInterface
 
     public function read($length)
     {
-        if ($length > strlen($this->buffer)) {
-            $this->buffer .= $this->decryptBlock(
-                self::BLOCK_LENGTH * ceil(($length - strlen($this->buffer)) / self::BLOCK_LENGTH)
+        if ($length > strlen($this->decryptionBuffer)) {
+            $this->decryptionBuffer .= $this->decryptBlock(
+                self::BLOCK_LENGTH * ceil(($length - strlen($this->decryptionBuffer)) / self::BLOCK_LENGTH)
             );
         }
-        $data = substr($this->buffer, 0, $length);
+        $data = substr($this->decryptionBuffer, 0, $length);
 
-        $this->buffer = substr($this->buffer, $length);
+        $this->decryptionBuffer = substr($this->decryptionBuffer, $length);
         return $data ? $data : '';
     }
 
@@ -76,24 +77,24 @@ class StreamDecryptionDecorator implements StreamInterface
 
     private function decryptBlock($length)
     {
-        if ($this->stream->eof()) {
+        if ($this->encryptionBuffer === '' && $this->stream->eof()) {
             return '';
         }
 
-        $encryptedText = '';
+        $encryptedText = $this->encryptionBuffer;
 
-        do {
+        while (strlen($encryptedText) < $length && !$this->stream->eof()) {
             $encryptedText .= $this->stream->read($length - strlen($encryptedText));
-        } while (strlen($encryptedText) < $length && !$this->stream->eof());
+        };
+
+        $this->encryptionBuffer = $this->stream->read(self::BLOCK_LENGTH);
 
         $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
-
-        // FIXME: it happens that eof is not reached but the pointer is at the last byte
-        if ($this->stream->eof() || $this->stream->getSize() === $this->stream->tell()) {
+        if ($this->encryptionBuffer === '' || $this->stream->eof()) {
             $options = OPENSSL_RAW_DATA;
         }
 
-        $plainText = openssl_decrypt(
+        $decryptedText = openssl_decrypt(
             $encryptedText,
             $this->encryptionMethod->getOpenSslMethod(),
             $this->key,
@@ -103,6 +104,6 @@ class StreamDecryptionDecorator implements StreamInterface
 
         $this->encryptionMethod->update($encryptedText);
 
-        return $plainText;
+        return $decryptedText;
     }
 }

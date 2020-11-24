@@ -1,11 +1,11 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods;
+namespace SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods;
 
 use LogicException;
 use InvalidArgumentException;
 
-class AesCbc implements EncryptionMethodInterface
+class EncryptionMethod implements EncryptionMethodInterface
 {
     const ENCRYPTION_BLOCK_SIZE = 16;
 

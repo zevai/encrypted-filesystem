@@ -1,15 +1,15 @@
 <?php
 
 
-namespace SmaatCoda\EncryptedFilesystem\Encrypter;
+namespace SmaatCoda\EncryptedFilesystem\Interfaces;
 
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;
 use Psr\Http\Message\StreamInterface;
-use SmaatCoda\EncryptedFilesystem\Encrypter\EncryptionMethods\EncryptionMethodInterface;
+use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods\EncryptionMethodInterface;
 
-class StreamEncryptionDecorator implements StreamInterface
+class EncryptingStreamDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
@@ -21,7 +21,7 @@ class StreamEncryptionDecorator implements StreamInterface
 
     protected $encryptionMethod;
 
-    protected $buffer;
+    protected $encryptionBuffer = '';
 
     public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptionMethod, $key)
     {
@@ -37,7 +37,7 @@ class StreamEncryptionDecorator implements StreamInterface
             $whence = SEEK_SET;
         }
         if ($whence === SEEK_SET) {
-            $this->buffer = '';
+            $this->encryptionBuffer = '';
             $wholeBlockOffset
                 = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
             $this->stream->seek($wholeBlockOffset);
@@ -50,20 +50,19 @@ class StreamEncryptionDecorator implements StreamInterface
 
     public function read($length)
     {
-        // TODO: when a file is only one block in size, the encryptor reaches eof while the only returning the iv, the actual data being in the buffer
-        if ($length > strlen($this->buffer)) {
-            $this->buffer .= $this->encryptBlock(
-                self::BLOCK_LENGTH * ceil(($length - strlen($this->buffer)) / self::BLOCK_LENGTH)
+        if ($length > strlen($this->encryptionBuffer)) {
+            $this->encryptionBuffer .= $this->encryptBlock(
+                self::BLOCK_LENGTH * ceil(($length - strlen($this->encryptionBuffer)) / self::BLOCK_LENGTH)
             );
         }
-        $data = substr($this->buffer, 0, $length);
-        $this->buffer = substr($this->buffer, $length);
+        $data = substr($this->encryptionBuffer, 0, $length);
+        $this->encryptionBuffer = substr($this->encryptionBuffer, $length);
         return $data ?: '';
     }
 
     public function eof()
     {
-        return $this->stream->eof() && empty($this->buffer);
+        return $this->stream->eof() && empty($this->encryptionBuffer);
     }
 
     public function getSize()
