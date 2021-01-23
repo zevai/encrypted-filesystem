@@ -1,13 +1,13 @@
 <?php
 
 
-namespace SmaatCoda\EncryptedFilesystem\Interfaces;
+namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
 
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;
 use Psr\Http\Message\StreamInterface;
-use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods\EncryptionMethodInterface;
+use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethodInterface;
 
 class EncryptingStreamDecorator implements StreamInterface
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods;
+namespace SmaatCoda\EncryptedFilesystem\Interfaces;
 
 interface EncryptionMethodInterface
 {

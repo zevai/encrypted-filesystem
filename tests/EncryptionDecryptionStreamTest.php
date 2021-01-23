@@ -2,12 +2,11 @@
 
 namespace SmaatCoda\EncryptedFilesystem\Tests;
 
-use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\Stream;
 use Orchestra\Testbench\TestCase;
-use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods\EncryptionMethod;
-use SmaatCoda\EncryptedFilesystem\Interfaces\DecryptingStreamDecorator;
-use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptingStreamDecorator;
+use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\DecryptingStreamDecorator;
+use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptingStreamDecorator;
+use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptionMethod;
 
 class EncryptionDecryptionStreamTest extends TestCase
 {
@@ -15,18 +14,18 @@ class EncryptionDecryptionStreamTest extends TestCase
     protected $testFileName;
     protected $key;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->encryptionKey = 'io0GXLA0l3AmuZUPnEqB';
         $this->storagePath = dirname(__DIR__) . '/storage';
         $this->testFileName = 'test-file.txt';
     }
 
-    public static function tearDownAfterClass()
-    {
-
-    }
-
+    /**
+     * @covers EncryptingStreamDecorator::eof
+     * @covers EncryptingStreamDecorator::read
+     * @return string
+     */
     public function test_encryption_decorator()
     {
         $encryptionMethod = new EncryptionMethod(openssl_random_pseudo_bytes(16));
@@ -40,14 +39,11 @@ class EncryptionDecryptionStreamTest extends TestCase
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
 
         $encryptedTextLength = 0;
-        $declaredLength = $inputEncryptedStream->getSize();
         while (!$inputEncryptedStream->eof()) {
             $encryptedText = $inputEncryptedStream->read(EncryptingStreamDecorator::BLOCK_LENGTH);
             $outputStream->write($encryptedText);
             $encryptedTextLength += strlen($encryptedText);
         }
-
-        print_r("\n result file length: $encryptedTextLength; declared length: $declaredLength");
 
         $this->assertTrue($inputEncryptedStream->eof());
 
@@ -55,11 +51,12 @@ class EncryptionDecryptionStreamTest extends TestCase
     }
 
     /**
+     * @covers DecryptingStreamDecorator::eof
+     * @covers DecryptingStreamDecorator::read
      * @depends test_encryption_decorator
      */
     public function test_decryption_decorator($inputFilePath)
     {
-
         $controlFilePath = $this->storagePath . '/' . $this->testFileName;
         $outputFilePath = $this->storagePath . '/' . time() .'-decrypted-' . $this->testFileName;
 
@@ -81,13 +78,8 @@ class EncryptionDecryptionStreamTest extends TestCase
         $controlContents = file_get_contents($controlFilePath);
         $outputContents = file_get_contents($outputFilePath);
 
-        $controlContentsLength = filesize($controlFilePath);
-        $outputContentsLength = filesize($outputFilePath);
-
         unlink($inputFilePath);
         unlink($outputFilePath);
-
-//        print_r("\n files are identical: " . ($controlContents == $outputContents ? 'true' : 'false') . "; control length: $controlContentsLength; result length: $outputContentsLength");
 
         $this->assertEquals($controlContents, $outputContents);
     }

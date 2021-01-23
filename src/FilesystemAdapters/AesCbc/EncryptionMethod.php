@@ -1,9 +1,10 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethods;
+namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
 
 use LogicException;
 use InvalidArgumentException;
+use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethodInterface;
 
 class EncryptionMethod implements EncryptionMethodInterface
 {

@@ -3,6 +3,8 @@
 
 namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
 
+use Exception;
+
 
 class FilesystemAdapter
 {
