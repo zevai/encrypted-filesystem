@@ -4,9 +4,8 @@ namespace SmaatCoda\EncryptedFilesystem\Tests;
 
 use GuzzleHttp\Psr7\Stream;
 use Orchestra\Testbench\TestCase;
-use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\DecryptingStreamDecorator;
-use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptingStreamDecorator;
-use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptionMethod;
+use SmaatCoda\EncryptedFilesystem\Compression\Zlib\CompressionStream;
+use SmaatCoda\EncryptedFilesystem\Compression\Zlib\DecompressedStream;
 
 class CompressionTest extends TestCase
 {
@@ -16,39 +15,36 @@ class CompressionTest extends TestCase
 
     public function setUp(): void
     {
-        $this->sourceFile = 'https://scontent.fkiv5-1.fna.fbcdn.net/v/t1.0-9/19642617_877650985716445_4225178475141011156_n.jpg?_nc_cat=104&ccb=2&_nc_sid=09cbfe&_nc_ohc=v8eT9G4EqDsAX-74aL8&_nc_ht=scontent.fkiv5-1.fna&oh=5b28196cd60e359c5f196ce89075dc4d&oe=6038747E';
+        $this->sourceFile = dirname(__DIR__) . '/storage/test-file.txt';
         $this->compressedFile = dirname(__DIR__) . '/storage/test-file-compressed.txt';
         $this->decompressedFile = dirname(__DIR__) . '/storage/test-file-decompressed.txt';
     }
 
+    /**
+     * @covers CompressionStream::read
+     * @covers DecompressedStream::read
+     */
     public function test_compression()
     {
         // Compressing
-        $compressedString = '';
-        $compressingStream = fopen($this->sourceFile, 'r');
-        stream_filter_append($compressingStream, 'zlib.deflate', STREAM_FILTER_READ, ['level' => 9, 'window' => 15, 'memory' => 9]);
+        $compressingStream = new CompressionStream(fopen($this->sourceFile, 'rw'));
+        $compressedOutput = new Stream(fopen($this->compressedFile, 'wb'));
 
-        while (!feof($compressingStream)) {
-            $compressedString .= fread($compressingStream, 16);
+        while (!$compressingStream->eof()) {
+            $compressedOutput->write($compressingStream->read(16));
         }
-
-        $compressedOutput = fopen($this->compressedFile, 'wb');
-        fwrite($compressedOutput, $compressedString);
-
 
         // Decompressing
-        $decompressedString = '';
-        $decompressedStream = fopen($this->compressedFile, 'r');
-        stream_filter_append($decompressedStream, 'zlib.inflate', STREAM_FILTER_READ, ['level' => 9, 'window' => 15, 'memory' => 9]);
+        $decompressedStream = new DecompressedStream(fopen($this->compressedFile, 'r'));
+        $decompressedOutput = new Stream(fopen($this->decompressedFile, 'wb'));
 
-        while (!feof($decompressedStream)) {
-            $decompressedString .= fread($decompressedStream, 16);
+        while (!$decompressedStream->eof()) {
+            $decompressedOutput->write($decompressedStream->read(16));
         }
 
-        $testFileCompressed = fopen($this->decompressedFile, 'wb');
-        fwrite($testFileCompressed, $decompressedString);
+        $this->assertLessThan(filesize($this->decompressedFile), filesize($this->compressedFile));
 
-        dd(strlen(file_get_contents($this->sourceFile)), filesize($this->compressedFile), filesize($this->decompressedFile));
-        $this->assertLessThan(filesize($this->compressedFile), filesize($this->decompressedFile));
+        unlink($this->compressedFile);
+        unlink($this->decompressedFile);
     }
 }
