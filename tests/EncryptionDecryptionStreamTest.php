@@ -4,6 +4,7 @@ namespace SmaatCoda\EncryptedFilesystem\Tests;
 
 use GuzzleHttp\Psr7\Stream;
 use Orchestra\Testbench\TestCase;
+use SmaatCoda\EncryptedFilesystem\Compression\Zlib\CompressionStream;
 use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\DecryptingStreamDecorator;
 use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptingStreamDecorator;
 use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptionMethod;
@@ -13,6 +14,8 @@ class EncryptionDecryptionStreamTest extends TestCase
     protected $storagePath;
     protected $testFileName;
     protected $key;
+
+    protected $compressionEnabled = true;
 
     public function setUp(): void
     {
@@ -33,7 +36,11 @@ class EncryptionDecryptionStreamTest extends TestCase
         $inputFilePath = $this->storagePath . '/' . $this->testFileName;
         $outputFilePath = $this->storagePath . '/' . time() .'-encrypted-' . $this->testFileName;
 
-        $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
+        if ($this->compressionEnabled) {
+            $inputOriginalStream = new CompressionStream(fopen($inputFilePath, 'rb'));
+        } else {
+            $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
+        }
 
         $inputEncryptedStream = new EncryptingStreamDecorator($inputOriginalStream, $encryptionMethod, $this->key);
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
@@ -61,16 +68,22 @@ class EncryptionDecryptionStreamTest extends TestCase
         $outputFilePath = $this->storagePath . '/' . time() .'-decrypted-' . $this->testFileName;
 
         $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
+
         $iv = $inputOriginalStream->read(DecryptingStreamDecorator::BLOCK_LENGTH);
         $encryptionMethod = new EncryptionMethod($iv);
 
         $inputDecryptedStream = new DecryptingStreamDecorator($inputOriginalStream, $encryptionMethod, $this->key);
-        $outputStream = new Stream(fopen($outputFilePath, 'wb'));
+
+        if ($this->compressionEnabled) {
+            $outputStream = new CompressionStream(fopen($outputFilePath, 'wb'));
+        } else {
+            $outputStream = new Stream(fopen($outputFilePath, 'wb'));
+        }
 
         while (!$inputDecryptedStream->eof()) {
-            $encryptedText = $inputDecryptedStream->read(DecryptingStreamDecorator::BLOCK_LENGTH);
+            $plainText = $inputDecryptedStream->read(DecryptingStreamDecorator::BLOCK_LENGTH);
 
-            $outputStream->write($encryptedText);
+            $outputStream->write($plainText);
         }
 
         $this->assertTrue($inputDecryptedStream->eof());

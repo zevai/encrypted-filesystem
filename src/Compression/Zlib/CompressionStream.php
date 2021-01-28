@@ -22,13 +22,16 @@ class CompressionStream extends Stream
             $stream = $stream->detach();
         }
 
-        if (isset($options['direction']) && $options['direction'] == self::DIRECTION_READ) {
-            stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ, ['level' => 9, 'window' => 15, 'memory' => 9]);
-            stream_filter_append($stream, 'zlib.inflate', STREAM_FILTER_WRITE, ['level' => 9, 'window' => 15, 'memory' => 9]);
+        $config = ['level' => 9, 'window' => 15, 'memory' => 9];
+
+        if (isset($options['direction']) && $options['direction'] == self::DIRECTION_WRITE) {
+            stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_WRITE, $config);
+            stream_filter_append($stream, 'zlib.inflate', STREAM_FILTER_READ, $config);
         } else {
-            stream_filter_append($stream, 'zlib.inflate', STREAM_FILTER_READ, ['level' => 9, 'window' => 15, 'memory' => 9]);
-            stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_WRITE, ['level' => 9, 'window' => 15, 'memory' => 9]);
+            stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ, $config);
+            stream_filter_append($stream, 'zlib.inflate', STREAM_FILTER_WRITE, $config);
         }
+
         parent::__construct($stream, $options);
     }
 }
