@@ -21,7 +21,7 @@ class EncryptionDecryptionStreamTest extends TestCase
     {
         $this->encryptionKey = 'io0GXLA0l3AmuZUPnEqB';
         $this->storagePath = dirname(__DIR__) . '/storage';
-        $this->testFileName = 'test-file.txt';
+        $this->testFileName = 'CV.pdf';
     }
 
     /**
