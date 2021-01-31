@@ -2,7 +2,6 @@
 
 namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
 
-use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;
 use Psr\Http\Message\StreamInterface;
@@ -12,23 +11,18 @@ class DecryptingStreamDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
-    const BLOCK_LENGTH = 16;
-
     protected $stream;
 
-    protected $key;
+    protected $encryptor;
 
-    protected $encryptionMethod;
+    protected $plaintextBuffer = '';
 
-    protected $decryptionBuffer = '';
+    protected $ciphertextBuffer = '';
 
-    protected $encryptionBuffer = '';
-
-    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptionMethod, $key)
+    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptor)
     {
         $this->stream = $stream;
-        $this->encryptionMethod = $encryptionMethod;
-        $this->key = $key;
+        $this->encryptor = $encryptor;
     }
 
     public function seek($offset, $whence = SEEK_SET)
@@ -38,10 +32,11 @@ class DecryptingStreamDecorator implements StreamInterface
             $whence = SEEK_SET;
         }
         if ($whence === SEEK_SET) {
-            $this->decryptionBuffer = '';
-            $wholeBlockOffset = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
-            $this->stream->seek($wholeBlockOffset);
-            $this->encryptionMethod->seek($wholeBlockOffset);
+            $this->plaintextBuffer = '';
+
+            $wholeBlockOffset = $this->encryptor->getBlockSize() * ceil($offset / $this->encryptor->getBlockSize());
+            $this->encryptor->seek($wholeBlockOffset, $whence);
+            $this->stream->seek($wholeBlockOffset, $whence);
             $this->read($offset - $wholeBlockOffset);
         } else {
             throw new LogicException('Unrecognized whence.');
@@ -50,20 +45,27 @@ class DecryptingStreamDecorator implements StreamInterface
 
     public function read($length)
     {
-        if ($length > strlen($this->decryptionBuffer)) {
-            $this->decryptionBuffer .= $this->decryptBlock(
-                self::BLOCK_LENGTH * ceil(($length - strlen($this->decryptionBuffer)) / self::BLOCK_LENGTH)
-            );
-        }
-        $data = substr($this->decryptionBuffer, 0, $length);
+        // FIXME: (the ciphertext buffer) for some reason when the stream reads off last bytes, the eof
+        // FIXME: continues to be false, until another reading occurs, which reads 0 bytes
+        if ($length > strlen($this->plaintextBuffer)) {
+//            while (strlen($this->plaintextBuffer) < $length) {
+                $ciphertext = $this->readCiphertext(
+                    $this->encryptor->getBlockSize() * ceil(($length - strlen($this->plaintextBuffer)) / $this->encryptor->getBlockSize())
+                );
 
-        $this->decryptionBuffer = substr($this->decryptionBuffer, $length);
+                $this->plaintextBuffer .= $this->encryptor->decrypt($ciphertext, $this->eof() || empty($this->ciphertextBuffer));
+//            }
+        }
+
+        $data = substr($this->plaintextBuffer, 0, $length);
+
+        $this->plaintextBuffer = substr($this->plaintextBuffer, $length);
         return $data ? $data : '';
     }
 
     public function getSize()
     {
-        if ($this->encryptionMethod->requiresPadding()) {
+        if ($this->encryptor->requiresPadding()) {
             return null;
         }
 
@@ -75,35 +77,20 @@ class DecryptingStreamDecorator implements StreamInterface
         return false;
     }
 
-    private function decryptBlock($length)
+    private function readCiphertext($length)
     {
-        if ($this->encryptionBuffer === '' && $this->stream->eof()) {
+        if ($this->ciphertextBuffer === '' && $this->stream->eof()) {
             return '';
         }
 
-        $encryptedText = $this->encryptionBuffer;
+        $ciphertext = $this->ciphertextBuffer;
 
-        while (strlen($encryptedText) < $length && !$this->stream->eof()) {
-            $encryptedText .= $this->stream->read($length - strlen($encryptedText));
+        while (strlen($ciphertext) < $length && !$this->stream->eof()) {
+            $ciphertext .= $this->stream->read($length - strlen($ciphertext));
         };
 
-        $this->encryptionBuffer = $this->stream->read(self::BLOCK_LENGTH);
+        $this->ciphertextBuffer = $this->stream->read($this->encryptor->getBlockSize());
 
-        $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
-        if ($this->encryptionBuffer === '' || $this->stream->eof()) {
-            $options = OPENSSL_RAW_DATA;
-        }
-
-        $decryptedText = openssl_decrypt(
-            $encryptedText,
-            $this->encryptionMethod->getOpenSslMethod(),
-            $this->key,
-            $options,
-            $this->encryptionMethod->getCurrentIv()
-        );
-
-        $this->encryptionMethod->update($encryptedText);
-
-        return $decryptedText;
+        return $ciphertext;
     }
 }

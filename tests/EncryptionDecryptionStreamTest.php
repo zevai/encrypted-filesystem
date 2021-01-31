@@ -7,15 +7,15 @@ use Orchestra\Testbench\TestCase;
 use SmaatCoda\EncryptedFilesystem\Compression\Zlib\CompressionStream;
 use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\DecryptingStreamDecorator;
 use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptingStreamDecorator;
-use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptionMethod;
+use SmaatCoda\EncryptedFilesystem\OpenSslCipherMethod;
 
 class EncryptionDecryptionStreamTest extends TestCase
 {
     protected $storagePath;
     protected $testFileName;
-    protected $key;
+    protected $encryptionKey;
 
-    protected $compressionEnabled = true;
+    protected $compressionEnabled = false;
 
     public function setUp(): void
     {
@@ -31,10 +31,10 @@ class EncryptionDecryptionStreamTest extends TestCase
      */
     public function test_encryption_decorator()
     {
-        $encryptionMethod = new EncryptionMethod(openssl_random_pseudo_bytes(16));
+        $encryptionMethod = new OpenSslCipherMethod($this->encryptionKey);
 
         $inputFilePath = $this->storagePath . '/' . $this->testFileName;
-        $outputFilePath = $this->storagePath . '/' . time() .'-encrypted-' . $this->testFileName;
+        $outputFilePath = $this->storagePath . '/' . time() . '-encrypted-' . $this->testFileName;
 
         if ($this->compressionEnabled) {
             $inputOriginalStream = new CompressionStream(fopen($inputFilePath, 'rb'));
@@ -42,14 +42,11 @@ class EncryptionDecryptionStreamTest extends TestCase
             $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
         }
 
-        $inputEncryptedStream = new EncryptingStreamDecorator($inputOriginalStream, $encryptionMethod, $this->key);
+        $inputEncryptedStream = new EncryptingStreamDecorator($inputOriginalStream, $encryptionMethod);
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
 
-        $encryptedTextLength = 0;
         while (!$inputEncryptedStream->eof()) {
-            $encryptedText = $inputEncryptedStream->read(EncryptingStreamDecorator::BLOCK_LENGTH);
-            $outputStream->write($encryptedText);
-            $encryptedTextLength += strlen($encryptedText);
+            $outputStream->write($inputEncryptedStream->read(32));
         }
 
         $this->assertTrue($inputEncryptedStream->eof());
@@ -58,21 +55,20 @@ class EncryptionDecryptionStreamTest extends TestCase
     }
 
     /**
-     * @covers DecryptingStreamDecorator::eof
-     * @covers DecryptingStreamDecorator::read
+     * @covers  DecryptingStreamDecorator::eof
+     * @covers  DecryptingStreamDecorator::read
      * @depends test_encryption_decorator
      */
     public function test_decryption_decorator($inputFilePath)
     {
         $controlFilePath = $this->storagePath . '/' . $this->testFileName;
-        $outputFilePath = $this->storagePath . '/' . time() .'-decrypted-' . $this->testFileName;
+        $outputFilePath = $this->storagePath . '/' . time() . '-decrypted-' . $this->testFileName;
 
         $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
 
-        $iv = $inputOriginalStream->read(DecryptingStreamDecorator::BLOCK_LENGTH);
-        $encryptionMethod = new EncryptionMethod($iv);
+        $encryptionMethod = new OpenSslCipherMethod($this->encryptionKey);
 
-        $inputDecryptedStream = new DecryptingStreamDecorator($inputOriginalStream, $encryptionMethod, $this->key);
+        $inputDecryptedStream = new DecryptingStreamDecorator($inputOriginalStream, $encryptionMethod);
 
         if ($this->compressionEnabled) {
             $outputStream = new CompressionStream(fopen($outputFilePath, 'wb'));
@@ -81,9 +77,7 @@ class EncryptionDecryptionStreamTest extends TestCase
         }
 
         while (!$inputDecryptedStream->eof()) {
-            $plainText = $inputDecryptedStream->read(DecryptingStreamDecorator::BLOCK_LENGTH);
-
-            $outputStream->write($plainText);
+            $outputStream->write($inputDecryptedStream->read(16));
         }
 
         $this->assertTrue($inputDecryptedStream->eof());
@@ -91,8 +85,8 @@ class EncryptionDecryptionStreamTest extends TestCase
         $controlContents = file_get_contents($controlFilePath);
         $outputContents = file_get_contents($outputFilePath);
 
-        unlink($inputFilePath);
-        unlink($outputFilePath);
+//        unlink($inputFilePath);
+//        unlink($outputFilePath);
 
         $this->assertEquals($controlContents, $outputContents);
     }

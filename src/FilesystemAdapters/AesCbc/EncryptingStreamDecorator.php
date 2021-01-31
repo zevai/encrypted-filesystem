@@ -3,31 +3,30 @@
 
 namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
 
-use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;
 use Psr\Http\Message\StreamInterface;
 use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethodInterface;
+use SmaatCoda\EncryptedFilesystem\Interfaces\RequiresIvContract;
+use SmaatCoda\EncryptedFilesystem\Interfaces\RequiresPaddingContract;
 
 class EncryptingStreamDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
-    const BLOCK_LENGTH = 16;
-
     protected $stream;
 
-    protected $key;
+    /**
+     * @var EncryptionMethodInterface
+     */
+    protected $encryptor;
 
-    protected $encryptionMethod;
+    protected $buffer = '';
 
-    protected $encryptionBuffer = '';
-
-    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptionMethod, $key)
+    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptor)
     {
         $this->stream = $stream;
-        $this->encryptionMethod = $encryptionMethod;
-        $this->key = $key;
+        $this->encryptor = $encryptor;
     }
 
     public function seek($offset, $whence = SEEK_SET)
@@ -37,11 +36,10 @@ class EncryptingStreamDecorator implements StreamInterface
             $whence = SEEK_SET;
         }
         if ($whence === SEEK_SET) {
-            $this->encryptionBuffer = '';
-            $wholeBlockOffset
-                = (int)($offset / self::BLOCK_LENGTH) * self::BLOCK_LENGTH;
-            $this->stream->seek($wholeBlockOffset);
-            $this->encryptionMethod->seek($wholeBlockOffset);
+            $this->buffer = '';
+            $wholeBlockOffset = $this->encryptor->getBlockSize() * ceil($offset / $this->encryptor->getBlockSize());
+            $this->encryptor->seek($wholeBlockOffset, $whence);
+            $this->stream->seek($wholeBlockOffset, $whence);
             $this->read($offset - $wholeBlockOffset);
         } else {
             throw new LogicException('Unrecognized whence.');
@@ -50,78 +48,43 @@ class EncryptingStreamDecorator implements StreamInterface
 
     public function read($length)
     {
-        if ($length > strlen($this->encryptionBuffer)) {
-            $this->encryptionBuffer .= $this->encryptBlock(
-                self::BLOCK_LENGTH * ceil(($length - strlen($this->encryptionBuffer)) / self::BLOCK_LENGTH)
-            );
+        if ($length > strlen($this->buffer)) {
+//            while (strlen($this->buffer) < $length) {
+                $plaintext = $this->stream->read(
+                    $this->encryptor->getBlockSize() * ceil(($length - strlen($this->buffer)) / $this->encryptor->getBlockSize())
+                );
+
+                $this->buffer .= $this->encryptor->encrypt($plaintext, $this->eof());
+//            }
         }
-        $data = substr($this->encryptionBuffer, 0, $length);
-        $this->encryptionBuffer = substr($this->encryptionBuffer, $length);
+
+        $data = substr($this->buffer, 0, $length);
+        $this->buffer = substr($this->buffer, $length);
         return $data ?: '';
     }
 
     public function eof()
     {
-        return $this->stream->eof() && empty($this->encryptionBuffer);
+        return $this->stream->eof() && empty($this->buffer);
     }
 
     public function getSize()
     {
-        $originalSize = $this->stream->getSize();
-        $requiresPadding = $this->encryptionMethod->requiresPadding();
+        $filesize = $this->stream->getSize();
 
-        $finalSize = $originalSize;
-
-        if ($originalSize !== null && $requiresPadding) {
-            $finalSize += self::BLOCK_LENGTH - $originalSize % self::BLOCK_LENGTH;
+        if ($this->encryptor instanceof RequiresPaddingContract) {
+            $filesize += $this->encryptor->getPaddingSize($filesize);
         }
 
-        // Add the IV bytes
-        $finalSize += self::BLOCK_LENGTH;
+        if ($this->encryptor instanceof RequiresIvContract) {
+            $filesize += $this->encryptor->getIvSize();
+        }
 
-        return $finalSize;
+        return $filesize;
     }
 
     public function isWritable()
     {
         return false;
-    }
-
-    private function encryptBlock($length)
-    {
-        if ($this->stream->eof()) {
-            return '';
-        }
-
-        $prefix = '';
-        $plainText = '';
-
-        if ($this->stream->tell() == 0) {
-            $prefix = $this->encryptionMethod->getCurrentIv();
-        }
-
-        do {
-            $plainText .= $this->stream->read($length - strlen($plainText));
-        } while (strlen($plainText) < $length && !$this->stream->eof());
-
-        // Don't know why bitwise operator is required
-        $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
-
-        if ($this->stream->eof()) {
-            $options = OPENSSL_RAW_DATA;
-        }
-
-        $encryptedText = openssl_encrypt(
-            $plainText,
-            $this->encryptionMethod->getOpenSslMethod(),
-            $this->key,
-            $options,
-            $this->encryptionMethod->getCurrentIv()
-        );
-
-        $this->encryptionMethod->update($encryptedText);
-        $encryptedText = $prefix . $encryptedText;
-
-        return $encryptedText;
     }
 }

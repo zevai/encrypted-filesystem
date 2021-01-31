@@ -4,13 +4,13 @@ namespace SmaatCoda\EncryptedFilesystem\Interfaces;
 
 interface EncryptionMethodInterface
 {
-    public function getOpenSslMethod();
+    public function encrypt(string $plaintext, bool $eof = false): string;
 
-    public function getCurrentIv();
+    public function decrypt(string $ciphertext, bool $eof = false): string;
 
-    public function requiresPadding();
+    public function getBlockSize(): int;
 
-    public function seek($offset, $whence = SEEK_SET);
+    public function reset(): void;
 
-    public function update($cipherTextBlock);
+    public function seek(int $offset, string $whence = SEEK_SET);
 }
