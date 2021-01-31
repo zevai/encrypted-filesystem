@@ -48,19 +48,18 @@ class EncryptingStreamDecorator implements StreamInterface
 
     public function read($length)
     {
-        if ($length > strlen($this->buffer)) {
-//            while (strlen($this->buffer) < $length) {
-                $plaintext = $this->stream->read(
-                    $this->encryptor->getBlockSize() * ceil(($length - strlen($this->buffer)) / $this->encryptor->getBlockSize())
-                );
+        while (strlen($this->buffer) < $length && !$this->stream->eof()) {
+            $plaintext = $this->stream->read(
+//                $this->encryptor->getBlockSize() * ceil(($length - strlen($this->buffer)) / $this->encryptor->getBlockSize())
+                $this->encryptor->getBlockSize()
+            );
 
-                $this->buffer .= $this->encryptor->encrypt($plaintext, $this->eof());
-//            }
+            $this->buffer .= $this->encryptor->encrypt($plaintext, $this->stream->eof());
         }
 
         $data = substr($this->buffer, 0, $length);
         $this->buffer = substr($this->buffer, $length);
-        return $data ?: '';
+        return $data;
     }
 
     public function eof()

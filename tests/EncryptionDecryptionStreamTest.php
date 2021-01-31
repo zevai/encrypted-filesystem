@@ -15,7 +15,7 @@ class EncryptionDecryptionStreamTest extends TestCase
     protected $testFileName;
     protected $encryptionKey;
 
-    protected $compressionEnabled = false;
+    protected $compressionEnabled = true;
 
     public function setUp(): void
     {
@@ -46,7 +46,7 @@ class EncryptionDecryptionStreamTest extends TestCase
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
 
         while (!$inputEncryptedStream->eof()) {
-            $outputStream->write($inputEncryptedStream->read(32));
+            $outputStream->write($inputEncryptedStream->read(7));
         }
 
         $this->assertTrue($inputEncryptedStream->eof());
@@ -77,7 +77,7 @@ class EncryptionDecryptionStreamTest extends TestCase
         }
 
         while (!$inputDecryptedStream->eof()) {
-            $outputStream->write($inputDecryptedStream->read(16));
+            $outputStream->write($inputDecryptedStream->read(4));
         }
 
         $this->assertTrue($inputDecryptedStream->eof());
@@ -85,8 +85,8 @@ class EncryptionDecryptionStreamTest extends TestCase
         $controlContents = file_get_contents($controlFilePath);
         $outputContents = file_get_contents($outputFilePath);
 
-//        unlink($inputFilePath);
-//        unlink($outputFilePath);
+        unlink($inputFilePath);
+        unlink($outputFilePath);
 
         $this->assertEquals($controlContents, $outputContents);
     }

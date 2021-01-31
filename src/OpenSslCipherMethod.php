@@ -61,7 +61,7 @@ class OpenSslCipherMethod implements EncryptionMethodInterface, RequiresIvContra
         $this->iv = $iv;
 
         if (strlen($iv) !== $this->blockSize) {
-            throw new InvalidArgumentException('Invalid initialization vector');
+            throw new InvalidArgumentException("Invalid initialization vector $iv");
         }
     }
 
@@ -135,7 +135,7 @@ class OpenSslCipherMethod implements EncryptionMethodInterface, RequiresIvContra
             $this->iv
         );
 
-        $this->iv = $ciphertext;
+        $this->setIv(substr($ciphertext, $this->blockSize * -1));
 
         return $prefix . $ciphertext;
     }
@@ -165,7 +165,7 @@ class OpenSslCipherMethod implements EncryptionMethodInterface, RequiresIvContra
             $this->iv
         );
 
-        $this->iv = $ciphertext;
+        $this->setIv(substr($ciphertext, $this->blockSize * -1));
 
         return $plaintext;
     }

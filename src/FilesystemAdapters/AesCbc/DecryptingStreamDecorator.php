@@ -43,24 +43,27 @@ class DecryptingStreamDecorator implements StreamInterface
         }
     }
 
-    public function read($length)
+    public function read($length): string
     {
-        // FIXME: (the ciphertext buffer) for some reason when the stream reads off last bytes, the eof
-        // FIXME: continues to be false, until another reading occurs, which reads 0 bytes
-        if ($length > strlen($this->plaintextBuffer)) {
-//            while (strlen($this->plaintextBuffer) < $length) {
-                $ciphertext = $this->readCiphertext(
-                    $this->encryptor->getBlockSize() * ceil(($length - strlen($this->plaintextBuffer)) / $this->encryptor->getBlockSize())
-                );
+        // FIXME: (the ciphertext buffer) for some reason, when the stream reads off last bytes, the eof
+        //      continues to be false, until another reading occurs, which reads 0 bytes
+        while (strlen($this->plaintextBuffer) < $length && !$this->stream->eof()) {
+            $ciphertext = $this->readCiphertext(
+//                $this->encryptor->getBlockSize() * ceil(($length - strlen($this->plaintextBuffer)) / $this->encryptor->getBlockSize())
+                $this->encryptor->getBlockSize()
+            );
 
-                $this->plaintextBuffer .= $this->encryptor->decrypt($ciphertext, $this->eof() || empty($this->ciphertextBuffer));
-//            }
+            $this->plaintextBuffer .= $this->encryptor->decrypt($ciphertext, $this->stream->eof());
         }
 
         $data = substr($this->plaintextBuffer, 0, $length);
-
         $this->plaintextBuffer = substr($this->plaintextBuffer, $length);
-        return $data ? $data : '';
+        return $data;
+    }
+
+    public function eof()
+    {
+        return $this->stream->eof() && empty($this->plaintextBuffer);
     }
 
     public function getSize()
