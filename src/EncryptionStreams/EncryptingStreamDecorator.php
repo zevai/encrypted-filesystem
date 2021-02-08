@@ -1,7 +1,7 @@
 <?php
 
 
-namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
+namespace SmaatCoda\EncryptedFilesystem\EncryptionStreams;
 
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;

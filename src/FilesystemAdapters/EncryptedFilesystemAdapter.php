@@ -1,42 +1,22 @@
 <?php
 
-
-namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc;
-
-use Exception;
+namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters;
 
 
-class FilesystemAdapter
+use Illuminate\Filesystem\FilesystemAdapter;
+use InvalidArgumentException;
+use League\Flysystem\FileNotFoundException;
+use League\Flysystem\FilesystemInterface;
+use League\Flysystem\PluginInterface;
+use League\Flysystem\RootViolationException;
+
+class EncryptedFilesystemAdapter extends FilesystemAdapter
 {
-    /**
-     * Define the number of blocks that should be read from the source file for each chunk.
-     * We chose 255 because on decryption we want to read chunks of 4kb ((255 + 1)*16).
-     */
-    const FILE_ENCRYPTION_BLOCKS = 255;
 
     /**
-     * This extension is attributed to encrypted files and will be checked for before decryption
+     * This extension is appended to encrypted files and will be checked for before decryption
      */
     const FILENAME_POSTFIX = '.enc';
-
-    /**
-     * Adapter name
-     */
-    const ADAPTER_NAME = 'encrypted';
-
-    /**
-     * The encryption key.
-     *
-     * @var string
-     */
-    protected $key;
-
-    /**
-     * The algorithm used for encryption.
-     *
-     * @var string
-     */
-    protected $cipher;
 
     /**
      * EncryptedAdapter constructor.
@@ -370,4 +350,53 @@ class FilesystemAdapter
         return preg_replace('/(' . self::FILENAME_POSTFIX . ')$/', '', $sourceRealPath);
     }
 
+    public function listContents($directory = '', $recursive = false)
+    {
+        // TODO: Implement listContents() method.
+    }
+
+    public function getMetadata($path)
+    {
+        // TODO: Implement getMetadata() method.
+    }
+
+    public function getSize($path)
+    {
+        // TODO: Implement getSize() method.
+    }
+
+    public function getMimetype($path)
+    {
+        // TODO: Implement getMimetype() method.
+    }
+
+    public function getTimestamp($path)
+    {
+        // TODO: Implement getTimestamp() method.
+    }
+
+    public function deleteDir($dirname)
+    {
+        // TODO: Implement deleteDir() method.
+    }
+
+    public function createDir($dirname, array $config = [])
+    {
+        // TODO: Implement createDir() method.
+    }
+
+    public function putStream($path, $resource, array $config = [])
+    {
+        // TODO: Implement putStream() method.
+    }
+
+    public function readAndDelete($path)
+    {
+        // TODO: Implement readAndDelete() method.
+    }
+
+    public function addPlugin(PluginInterface $plugin)
+    {
+        // TODO: Implement addPlugin() method.
+    }
 }

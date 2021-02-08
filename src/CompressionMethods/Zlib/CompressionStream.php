@@ -1,7 +1,7 @@
 <?php
 
 
-namespace SmaatCoda\EncryptedFilesystem\Compression\Zlib;
+namespace SmaatCoda\EncryptedFilesystem\CompressionMethods\Zlib;
 
 
 use GuzzleHttp\Psr7\Stream;

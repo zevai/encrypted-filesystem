@@ -1,6 +1,6 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem;
+namespace SmaatCoda\EncryptedFilesystem\CipherMethods;
 
 use InvalidArgumentException;
 use LogicException;
@@ -135,7 +135,7 @@ class OpenSslCipherMethod implements EncryptionMethodInterface, RequiresIvContra
             $this->iv
         );
 
-        $this->setIv(substr($ciphertext, $this->blockSize * -1));
+        $this->setIv(substr($ciphertext, 0, $this->blockSize));
 
         return $prefix . $ciphertext;
     }
@@ -165,7 +165,7 @@ class OpenSslCipherMethod implements EncryptionMethodInterface, RequiresIvContra
             $this->iv
         );
 
-        $this->setIv(substr($ciphertext, $this->blockSize * -1));
+        $this->setIv(substr($ciphertext, 0, $this->blockSize));
 
         return $plaintext;
     }

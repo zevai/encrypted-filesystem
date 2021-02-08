@@ -4,10 +4,10 @@ namespace SmaatCoda\EncryptedFilesystem\Tests;
 
 use GuzzleHttp\Psr7\Stream;
 use Orchestra\Testbench\TestCase;
-use SmaatCoda\EncryptedFilesystem\Compression\Zlib\CompressionStream;
-use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\DecryptingStreamDecorator;
-use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\AesCbc\EncryptingStreamDecorator;
-use SmaatCoda\EncryptedFilesystem\OpenSslCipherMethod;
+use SmaatCoda\EncryptedFilesystem\CompressionMethods\Zlib\CompressionStream;
+use SmaatCoda\EncryptedFilesystem\EncryptionStreams\DecryptingStreamDecorator;
+use SmaatCoda\EncryptedFilesystem\EncryptionStreams\EncryptingStreamDecorator;
+use SmaatCoda\EncryptedFilesystem\CipherMethods\OpenSslCipherMethod;
 
 class EncryptionDecryptionStreamTest extends TestCase
 {
@@ -46,7 +46,7 @@ class EncryptionDecryptionStreamTest extends TestCase
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
 
         while (!$inputEncryptedStream->eof()) {
-            $outputStream->write($inputEncryptedStream->read(7));
+            $outputStream->write($inputEncryptedStream->read(30));
         }
 
         $this->assertTrue($inputEncryptedStream->eof());
@@ -77,7 +77,7 @@ class EncryptionDecryptionStreamTest extends TestCase
         }
 
         while (!$inputDecryptedStream->eof()) {
-            $outputStream->write($inputDecryptedStream->read(4));
+            $outputStream->write($inputDecryptedStream->read(100));
         }
 
         $this->assertTrue($inputDecryptedStream->eof());
