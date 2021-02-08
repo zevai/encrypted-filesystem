@@ -1,6 +1,6 @@
 <?php
 
-namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters;
+namespace SmaatCoda\EncryptedFilesystem;
 
 
 use Illuminate\Filesystem\FilesystemAdapter;
