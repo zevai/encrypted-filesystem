@@ -16,10 +16,10 @@ class EncryptedFilesystemServiceProvider extends ServiceProvider
             $permissions = $config['permissions'] ?? [];
 
             $links = ($config['links'] ?? null) === 'skip'
-                ? EncryptedFilesystemAdapter::SKIP_LINKS
-                : EncryptedFilesystemAdapter::DISALLOW_LINKS;
+                ? EncryptedLocalAdapter::SKIP_LINKS
+                : EncryptedLocalAdapter::DISALLOW_LINKS;
 
-            $adapter = new EncryptedFilesystemAdapter($cipherMethod, $config['root'], $config['lock'] ?? LOCK_EX, $links, $permissions);
+            $adapter = new EncryptedLocalAdapter($cipherMethod, $config['root'], $config['lock'] ?? LOCK_EX, $links, $permissions);
 
             return new Flysystem($adapter, count($config) > 0 ? $config : null);
         });
