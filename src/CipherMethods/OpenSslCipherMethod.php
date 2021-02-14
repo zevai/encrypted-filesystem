@@ -4,11 +4,11 @@ namespace SmaatCoda\EncryptedFilesystem\CipherMethods;
 
 use InvalidArgumentException;
 use LogicException;
-use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethodInterface;
+use SmaatCoda\EncryptedFilesystem\Interfaces\CipherMethodInterface;
 use SmaatCoda\EncryptedFilesystem\Interfaces\RequiresIvContract;
 use SmaatCoda\EncryptedFilesystem\Interfaces\RequiresPaddingContract;
 
-class OpenSslCipherMethod implements EncryptionMethodInterface, RequiresIvContract, RequiresPaddingContract
+class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, RequiresPaddingContract
 {
     const AES_128_CBC = 'aes-128-cbc';
     const AES_128_CFB = 'aes-128-cfb';

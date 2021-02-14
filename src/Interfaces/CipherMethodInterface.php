@@ -2,7 +2,7 @@
 
 namespace SmaatCoda\EncryptedFilesystem\Interfaces;
 
-interface EncryptionMethodInterface
+interface CipherMethodInterface
 {
     public function encrypt(string $plaintext, bool $eof = false): string;
 

@@ -5,7 +5,7 @@ namespace SmaatCoda\EncryptedFilesystem\EncryptionStreams;
 use GuzzleHttp\Psr7\StreamDecoratorTrait;
 use LogicException;
 use Psr\Http\Message\StreamInterface;
-use SmaatCoda\EncryptedFilesystem\Interfaces\EncryptionMethodInterface;
+use SmaatCoda\EncryptedFilesystem\Interfaces\CipherMethodInterface;
 
 class DecryptingStreamDecorator implements StreamInterface
 {
@@ -19,7 +19,7 @@ class DecryptingStreamDecorator implements StreamInterface
 
     protected $ciphertextBuffer = '';
 
-    public function __construct(StreamInterface $stream, EncryptionMethodInterface $encryptor)
+    public function __construct(StreamInterface $stream, CipherMethodInterface $encryptor)
     {
         $this->stream = $stream;
         $this->encryptor = $encryptor;
