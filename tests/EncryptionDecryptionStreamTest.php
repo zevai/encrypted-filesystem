@@ -42,6 +42,7 @@ class EncryptionDecryptionStreamTest extends TestCase
             $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
         }
 
+
         $inputEncryptedStream = new EncryptingStreamDecorator($inputOriginalStream, $encryptionMethod);
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
 

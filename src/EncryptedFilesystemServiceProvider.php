@@ -6,6 +6,8 @@ use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem as Flysystem;
 use SmaatCoda\EncryptedFilesystem\CipherMethods\OpenSslCipherMethod;
+use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\EncryptedLocalAdapter;
+use SmaatCoda\EncryptedFilesystem\FilesystemAdapters\FilesystemAdapter;
 
 class EncryptedFilesystemServiceProvider extends ServiceProvider
 {
@@ -21,7 +23,7 @@ class EncryptedFilesystemServiceProvider extends ServiceProvider
 
             $adapter = new EncryptedLocalAdapter($cipherMethod, $config['root'], $config['lock'] ?? LOCK_EX, $links, $permissions);
 
-            return new Flysystem($adapter, count($config) > 0 ? $config : null);
+            return new FilesystemAdapter(new Flysystem($adapter, count($config) > 0 ? $config : null));
         });
     }
 }
