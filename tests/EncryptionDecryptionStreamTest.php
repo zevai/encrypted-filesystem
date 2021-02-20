@@ -3,6 +3,7 @@
 namespace SmaatCoda\EncryptedFilesystem\Tests;
 
 use GuzzleHttp\Psr7\Stream;
+use Illuminate\Support\Facades\Storage;
 use Orchestra\Testbench\TestCase;
 use SmaatCoda\EncryptedFilesystem\CompressionMethods\Zlib\CompressionStream;
 use SmaatCoda\EncryptedFilesystem\EncryptionStreams\DecryptingStreamDecorator;

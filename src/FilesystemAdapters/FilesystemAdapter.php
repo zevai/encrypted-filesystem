@@ -6,6 +6,9 @@ use Illuminate\Filesystem\FilesystemAdapter as BaseFilesystemAdapter;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * @mixin \League\Flysystem\FilesystemInterface
+ */
 class FilesystemAdapter extends BaseFilesystemAdapter
 {
     public function response($path, $name = null, array $headers = [], $disposition = 'inline')
@@ -39,7 +42,7 @@ class FilesystemAdapter extends BaseFilesystemAdapter
             }
         });
 
-        return parent::response($path, $name, $headers, $disposition);
+        return $response;
     }
 
 

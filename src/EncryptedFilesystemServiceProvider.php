@@ -14,7 +14,7 @@ class EncryptedFilesystemServiceProvider extends ServiceProvider
     public function boot(FilesystemManager $filesystemManager)
     {
         $filesystemManager->extend('encrypted-filesystem', function ($app, $config) use ($filesystemManager) {
-            $cipherMethod = $encryptionMethod = new OpenSslCipherMethod('io0GXLA0l3AmuZUPnEqB');
+            $cipherMethod = $encryptionMethod = new OpenSslCipherMethod($config['key']);
             $permissions = $config['permissions'] ?? [];
 
             $links = ($config['links'] ?? null) === 'skip'
