@@ -164,8 +164,6 @@ class EncryptedLocalAdapter extends Local
 
     public function getSize($path)
     {
-        $path = $this->attachEncryptionMarkers($path);
-
         return parent::getSize($path);
     }
 

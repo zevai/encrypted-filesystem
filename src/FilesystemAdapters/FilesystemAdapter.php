@@ -23,7 +23,6 @@ class FilesystemAdapter extends BaseFilesystemAdapter
 
         $response->headers->replace($headers + [
                 'Content-Type' => $this->mimeType($path),
-                'Content-Length' => $this->size($path),
                 'Content-Disposition' => $disposition,
             ]);
 
