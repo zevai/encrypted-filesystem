@@ -27,7 +27,7 @@ class EncryptedStorageTest extends TestCase
 //        $this->storage->put('CV-encrypted.pdf', $contents);
 
 //        $contents2 = $this->storage->get('CV-encrypted.pdf');
-//        file_put_contents(dirname(__DIR__) . '/storage/CV-decrypted.pdf', $contents);
+//        file_put_contents(dirname(__DIR__) . '/storage/CV-decrypted.pdf', $contents2);
     }
 
 }
