@@ -5,7 +5,6 @@ namespace SmaatCoda\EncryptedFilesystem\Tests;
 use GuzzleHttp\Psr7\Stream;
 use Illuminate\Support\Facades\Storage;
 use Orchestra\Testbench\TestCase;
-use SmaatCoda\EncryptedFilesystem\CompressionMethods\Zlib\CompressionStream;
 use SmaatCoda\EncryptedFilesystem\EncryptionStreams\DecryptingStreamDecorator;
 use SmaatCoda\EncryptedFilesystem\EncryptionStreams\EncryptingStreamDecorator;
 use SmaatCoda\EncryptedFilesystem\CipherMethods\OpenSslCipherMethod;
@@ -15,8 +14,6 @@ class EncryptionDecryptionStreamTest extends TestCase
     protected $storagePath;
     protected $testFileName;
     protected $encryptionKey;
-
-    protected $compressionEnabled = true;
 
     public function setUp(): void
     {
@@ -37,12 +34,7 @@ class EncryptionDecryptionStreamTest extends TestCase
         $inputFilePath = $this->storagePath . '/' . $this->testFileName;
         $outputFilePath = $this->storagePath . '/' . time() . '-encrypted-' . $this->testFileName;
 
-        if ($this->compressionEnabled) {
-            $inputOriginalStream = new CompressionStream(fopen($inputFilePath, 'rb'));
-        } else {
-            $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
-        }
-
+        $inputOriginalStream = new Stream(fopen($inputFilePath, 'rb'));
 
         $inputEncryptedStream = new EncryptingStreamDecorator($inputOriginalStream, $encryptionMethod);
         $outputStream = new Stream(fopen($outputFilePath, 'wb'));
@@ -72,11 +64,7 @@ class EncryptionDecryptionStreamTest extends TestCase
 
         $inputDecryptedStream = new DecryptingStreamDecorator($inputOriginalStream, $encryptionMethod);
 
-        if ($this->compressionEnabled) {
-            $outputStream = new CompressionStream(fopen($outputFilePath, 'wb'));
-        } else {
             $outputStream = new Stream(fopen($outputFilePath, 'wb'));
-        }
 
         while (!$inputDecryptedStream->eof()) {
             $outputStream->write($inputDecryptedStream->read(100));
