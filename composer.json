@@ -1,11 +1,10 @@
 {
   "name": "smaatcoda/encrypted-filesystem",
-  "description": "EncryptedFilesystem allows encrypting files, streams and extends Laravel's storage to make working with file encryption easier.",
+  "description": "Encrypted Filesystem allows easy file and/or stream encryption and provides integration with Laravel's Filesystem.",
   "type": "library",
   "require": {
     "php": ">=7.3",
     "guzzlehttp/psr7": "^1.7",
-    "illuminate/config": "^8.24",
     "ext-openssl": "^7.3"
   },
   "autoload": {
