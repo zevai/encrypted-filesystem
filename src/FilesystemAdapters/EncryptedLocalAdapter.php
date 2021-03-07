@@ -52,16 +52,8 @@ class EncryptedLocalAdapter extends Local
         fwrite($stream, $contents);
         rewind($stream);
 
-        $encryptedStream = new EncryptingStreamDecorator(new Stream($stream), $this->cipherMethod);
-        $outputStream = new Stream(fopen($location, 'wb'));
-
-        while (!$encryptedStream->eof()) {
-            $outputStream->write($encryptedStream->read($this->cipherMethod->getBlockSize()));
-        }
-
-        $type = 'file';
-        $size = $encryptedStream->getSize();
-        $result = compact('contents', 'type', 'size', 'path');
+        $result = $this->writeStream($path, $stream, $config);
+        $result['contents'] = $contents;
 
         if ($visibility = $config->get('visibility')) {
             $result['visibility'] = $visibility;
@@ -75,6 +67,8 @@ class EncryptedLocalAdapter extends Local
     {
         $location = $this->attachEncryptionMarkers($this->applyPathPrefix($path));
         $this->ensureDirectory(dirname($location));
+        $this->cipherMethod->reset();
+
         $stream = new Stream($resource);
         $encryptedStream = new EncryptingStreamDecorator($stream, $this->cipherMethod);
         $outputStream = new Stream(fopen($location, 'wb'));
@@ -84,7 +78,9 @@ class EncryptedLocalAdapter extends Local
         }
 
         $type = 'file';
-        $result = compact('type', 'path');
+        $size = $encryptedStream->getSize();
+
+        $result = compact('type', 'path', 'size');
 
         if ($visibility = $config->get('visibility')) {
             $this->setVisibility($path, $visibility);
@@ -97,6 +93,8 @@ class EncryptedLocalAdapter extends Local
     public function readStream($path)
     {
         $location = $this->attachEncryptionMarkers($this->applyPathPrefix($path));
+        $this->cipherMethod->reset();
+
         $stream = new Stream(fopen($location, 'rb'));
         $decryptedStream = new DecryptingStreamDecorator($stream, $this->cipherMethod);
 
@@ -111,6 +109,8 @@ class EncryptedLocalAdapter extends Local
     public function read($path)
     {
         $location = $this->attachEncryptionMarkers($this->applyPathPrefix($path));
+        $this->cipherMethod->reset();
+
         $stream = new Stream(fopen($location, 'rb'));
         $decryptedStream = new DecryptingStreamDecorator($stream, $this->cipherMethod);
 

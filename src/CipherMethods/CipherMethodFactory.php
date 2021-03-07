@@ -4,6 +4,7 @@
 namespace SmaatCoda\EncryptedFilesystem\CipherMethods;
 
 use Closure;
+use SmaatCoda\EncryptedFilesystem\Exceptions\InvalidCipherMethod;
 use SmaatCoda\EncryptedFilesystem\Exceptions\InvalidConfiguration;
 use SmaatCoda\EncryptedFilesystem\Exceptions\UnregisteredCipherMethod;
 use SmaatCoda\EncryptedFilesystem\Interfaces\CipherMethodInterface;
@@ -13,10 +14,15 @@ class CipherMethodFactory
 
     protected static $resolvers = [];
 
-    public static function make(array $config): CipherMethodInterface
+    public static function make(array $config)
     {
         if (isset(static::$resolvers[$config['cipher-method']])) {
-            return call_user_func(static::$resolvers[$config['cipher-method']], $config);
+            $cipherMethod = call_user_func(static::$resolvers[$config['cipher-method']], $config);
+            if ($cipherMethod instanceof CipherMethodInterface) {
+                return $cipherMethod;
+            }
+
+            throw new InvalidCipherMethod($config['cipher-method']);
         }
 
         switch ($config['cipher-method']) {
