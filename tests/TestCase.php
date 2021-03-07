@@ -24,5 +24,4 @@ class TestCase extends BaseTestCase
             'root' => dirname(__DIR__) . '/storage',
         ]);
     }
-
 }

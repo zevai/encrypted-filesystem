@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class FilesystemAdapter extends BaseFilesystemAdapter
 {
+    /** @inheritdoc  */
     public function response($path, $name = null, array $headers = [], $disposition = 'inline')
     {
         $response = new StreamedResponse;

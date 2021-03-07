@@ -14,6 +14,9 @@ class EncryptingStreamDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
+    /**
+     * @var StreamInterface
+     */
     protected $stream;
 
     /**
@@ -21,14 +24,26 @@ class EncryptingStreamDecorator implements StreamInterface
      */
     protected $encryptor;
 
+    /**
+     * @var string
+     */
     protected $buffer = '';
 
+    /**
+     * EncryptingStreamDecorator constructor.
+     * @param StreamInterface $stream
+     * @param CipherMethodInterface $encryptor
+     */
     public function __construct(StreamInterface $stream, CipherMethodInterface $encryptor)
     {
         $this->stream = $stream;
         $this->encryptor = $encryptor;
     }
 
+    /**
+     * @param int $offset
+     * @param int $whence
+     */
     public function seek($offset, $whence = SEEK_SET)
     {
         if ($whence === SEEK_CUR) {
@@ -46,6 +61,10 @@ class EncryptingStreamDecorator implements StreamInterface
         }
     }
 
+    /**
+     * @param int $length
+     * @return false|string
+     */
     public function read($length)
     {
         while (strlen($this->buffer) < $length && !$this->stream->eof()) {
@@ -62,11 +81,17 @@ class EncryptingStreamDecorator implements StreamInterface
         return $data;
     }
 
+    /**
+     * @return bool
+     */
     public function eof()
     {
         return $this->stream->eof() && empty($this->buffer);
     }
 
+    /**
+     * @return int|null
+     */
     public function getSize()
     {
         $filesize = $this->stream->getSize();
@@ -82,6 +107,9 @@ class EncryptingStreamDecorator implements StreamInterface
         return $filesize;
     }
 
+    /**
+     * @return bool
+     */
     public function isWritable()
     {
         return false;

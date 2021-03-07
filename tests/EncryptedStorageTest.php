@@ -43,7 +43,7 @@ class EncryptedStorageTest extends TestCase
         $outputFilePath = $this->storagePath . '/' . time() . '-encrypted-' . $this->testFileName;
 
         // This driver works exclusively with streams, so transform the contents into a stream
-        $stream = fopen('php://memory','r+');
+        $stream = fopen('php://memory', 'r+');
         fwrite($stream, file_get_contents($inputFilePath));
         rewind($stream);
 
@@ -121,7 +121,5 @@ class EncryptedStorageTest extends TestCase
         $this->storage->delete([$copiedPath, $movedPath]);
         $this->assertFalse($this->storage->exists($movedPath), 'delete failed');
         $this->assertFalse($this->storage->exists($copiedPath), 'delete failed');
-
     }
-
 }

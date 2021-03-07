@@ -35,12 +35,24 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
     const IDEA_CFB = 'idea-cfb';
     const IDEA_OFB = 'idea-ofb';
 
+    /**
+     * @var
+     */
     protected $iv;
 
+    /**
+     * @var
+     */
     protected $key;
 
+    /**
+     * @var mixed|string
+     */
     protected $algorithm;
 
+    /**
+     * @var false|int
+     */
     protected $blockSize;
 
     /**
@@ -56,6 +68,9 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
         $this->blockSize = openssl_cipher_iv_length($this->algorithm);
     }
 
+    /**
+     * @param string $iv
+     */
     public function setIv(string $iv)
     {
         $this->iv = $iv;
@@ -65,6 +80,9 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
         }
     }
 
+    /**
+     * @return string
+     */
     public function getIv(): string
     {
         return $this->iv;
@@ -111,6 +129,11 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
         return $this->blockSize;
     }
 
+    /**
+     * @param string $plaintext
+     * @param bool $eof
+     * @return string
+     */
     public function encrypt(string $plaintext, bool $eof = false): string
     {
         $prefix = '';
@@ -121,6 +144,7 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
             $prefix = $this->iv;
         }
 
+        // Use no padding except at the end of file
         $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
 
         if ($eof) {
@@ -140,6 +164,11 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
         return $prefix . $ciphertext;
     }
 
+    /**
+     * @param string $ciphertext
+     * @param bool $eof
+     * @return string
+     */
     public function decrypt(string $ciphertext, bool $eof = false): string
     {
         if (empty($this->iv)) {
@@ -151,6 +180,7 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
             }
         }
 
+        // Use no padding except at the end of file
         $options = OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING;
 
         if ($eof) {
@@ -170,16 +200,26 @@ class OpenSslCipherMethod implements CipherMethodInterface, RequiresIvContract, 
         return $plaintext;
     }
 
+    /**
+     * @return string
+     */
     public function generateIv(): string
     {
         return $this->iv = openssl_random_pseudo_bytes($this->blockSize);
     }
 
+    /**
+     *
+     */
     public function reset(): void
     {
         $this->iv = null;
     }
 
+    /**
+     * @param int $offset
+     * @param int|string $whence
+     */
     public function seek(int $offset, string $whence = SEEK_SET)
     {
         if ($offset === 0 && $whence === SEEK_SET) {

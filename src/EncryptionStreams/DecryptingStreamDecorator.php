@@ -11,20 +11,41 @@ class DecryptingStreamDecorator implements StreamInterface
 {
     use StreamDecoratorTrait;
 
+    /**
+     * @var StreamInterface
+     */
     protected $stream;
 
+    /**
+     * @var CipherMethodInterface
+     */
     protected $encryptor;
 
+    /**
+     * @var string
+     */
     protected $plaintextBuffer = '';
 
+    /**
+     * @var string
+     */
     protected $ciphertextBuffer = '';
 
+    /**
+     * DecryptingStreamDecorator constructor.
+     * @param StreamInterface $stream
+     * @param CipherMethodInterface $encryptor
+     */
     public function __construct(StreamInterface $stream, CipherMethodInterface $encryptor)
     {
         $this->stream = $stream;
         $this->encryptor = $encryptor;
     }
 
+    /**
+     * @param int $offset
+     * @param int $whence
+     */
     public function seek($offset, $whence = SEEK_SET)
     {
         if ($whence === SEEK_CUR) {
@@ -43,6 +64,10 @@ class DecryptingStreamDecorator implements StreamInterface
         }
     }
 
+    /**
+     * @param int $length
+     * @return string
+     */
     public function read($length): string
     {
         // FIXME: (the ciphertext buffer) for some reason, when the stream reads off last bytes, the eof
@@ -53,6 +78,7 @@ class DecryptingStreamDecorator implements StreamInterface
                 $this->encryptor->getBlockSize()
             );
 
+            // This buffer is a workaround for the problem stated above
             $this->plaintextBuffer .= $this->encryptor->decrypt($ciphertext, $this->stream->eof());
         }
 
@@ -61,11 +87,17 @@ class DecryptingStreamDecorator implements StreamInterface
         return $data;
     }
 
+    /**
+     * @return bool
+     */
     public function eof()
     {
         return $this->stream->eof() && empty($this->plaintextBuffer);
     }
 
+    /**
+     * @return int|null
+     */
     public function getSize()
     {
         if ($this->encryptor->requiresPadding()) {
@@ -75,11 +107,18 @@ class DecryptingStreamDecorator implements StreamInterface
         return $this->stream->getSize();
     }
 
+    /**
+     * @return bool
+     */
     public function isWritable()
     {
         return false;
     }
 
+    /**
+     * @param $length
+     * @return string
+     */
     private function readCiphertext($length)
     {
         if ($this->ciphertextBuffer === '' && $this->stream->eof()) {
