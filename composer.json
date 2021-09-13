@@ -1,5 +1,5 @@
 {
-  "name": "smaatcoda/encrypted-filesystem",
+  "name": "ogrygorash/encrypted-filesystem",
   "description": "Encrypted Filesystem allows easy file and/or stream encryption and provides integration with Laravel's Filesystem.",
   "type": "library",
   "require": {
