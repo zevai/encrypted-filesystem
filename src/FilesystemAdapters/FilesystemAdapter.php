@@ -2,6 +2,7 @@
 
 namespace SmaatCoda\EncryptedFilesystem\FilesystemAdapters;
 
+use GuzzleHttp\Psr7\MimeType;
 use Illuminate\Filesystem\FilesystemAdapter as BaseFilesystemAdapter;
 use Psr\Http\Message\StreamInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,7 +24,7 @@ class FilesystemAdapter extends BaseFilesystemAdapter
         );
 
         $response->headers->replace($headers + [
-                'Content-Type' => $this->mimeType($path),
+                'Content-Type' => MimeType::fromFilename($name),
                 'Content-Disposition' => $disposition,
             ]);
 
